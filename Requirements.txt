@@ -1,0 +1,13 @@
+langchain
+langchain-community
+langchain-google-genai
+google-generativeai
+faiss-cpu
+pypdf
+unstructured[local-inference]
+python-magic
+python-docx
+langchain-unstructured
+flask
+pyngrok
+flask-cors
