@@ -240,7 +240,8 @@ else:
 # --- Document Upload and Processing ---
 # --- Domain Selection Menu ---
 app = Flask(__name__)
-CORS(app)
+# Allow all origins for CORS (fixes CORS errors)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
 
@@ -270,7 +271,7 @@ def predict():
                 file_paths.append(temp_file_path)
 
             # Create the vector store on-the-fly from the user's documents
-            vector_store = create_vector_store_from_files(file_paths)
+            vector_store = create_vector_store(file_paths)
             if not vector_store:
                 return jsonify({"error": "Failed to process the uploaded documents."}), 500
 
