@@ -242,7 +242,7 @@ print("✅ AI Models and Chains Initialized Successfully.")
 knowledge_bases = {}
 
 
-@app.route('/upload', methods=['POST'])
+'''@app.route('/upload', methods=['POST'])
 def upload_documents():
     data = request.get_json()
     domain = data.get('domain')
@@ -279,7 +279,36 @@ def upload_documents():
             return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
 
     except Exception as e:
-        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
+        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500'''
+
+# =======================================================================
+#                       TEMPORARY DEBUGGING ENDPOINT
+# =======================================================================
+@app.route('/upload', methods=['POST'])
+def upload_documents():
+    # This is a super-fast dummy function for debugging.
+    # It does NO ML processing.
+    try:
+        data = request.get_json()
+        domain = data.get('domain')
+        documents_b64 = data.get('documents')
+        
+        print(f"DEBUG: Received request for domain '{domain}'.")
+        print(f"DEBUG: Received {len(documents_b64)} document(s).")
+        
+        # Immediately return a fake session_id without any processing.
+        fake_session_id = "debug-session-12345"
+        print(f"DEBUG: Successfully received data. Returning fake session_id: {fake_session_id}")
+        
+        return jsonify({
+            "session_id": fake_session_id, 
+            "message": "DEBUG: This is a successful test response from the dummy endpoint."
+        })
+
+    except Exception as e:
+        # If there's an error just reading the request, send it back.
+        print(f"DEBUG: Error in the dummy endpoint itself: {str(e)}")
+        return jsonify({"error": f"An error occurred in the dummy endpoint: {str(e)}"}), 500
 
 
 @app.route('/query', methods=['POST'])
