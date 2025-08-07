@@ -264,7 +264,7 @@ def upload_documents():
                 file_paths.append(temp_file_path)
 
             # Create the vector store on-the-fly from the user's documents
-            vector_store = create_vector_store_from_files(file_paths)
+            vector_store = create_vector_store(file_paths)
             if not vector_store:
                 return jsonify({"error": "Failed to process the uploaded documents."}), 500
 
