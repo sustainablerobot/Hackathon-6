@@ -281,34 +281,50 @@ def upload_documents():
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500'''
 
-# =======================================================================
-#                       TEMPORARY DEBUGGING ENDPOINT
-# =======================================================================
 @app.route('/upload', methods=['POST'])
 def upload_documents():
-    # This is a super-fast dummy function for debugging.
-    # It does NO ML processing.
+    data = request.get_json()
+    domain = data.get('domain')
+    documents_b64 = data.get('documents')
+
+    if not all([domain, documents_b64]):
+        return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
+
+    session_id = str(uuid.uuid4())
+
     try:
-        data = request.get_json()
-        domain = data.get('domain')
-        documents_b64 = data.get('documents')
-        
-        print(f"DEBUG: Received request for domain '{domain}'.")
-        print(f"DEBUG: Received {len(documents_b64)} document(s).")
-        
-        # Immediately return a fake session_id without any processing.
-        fake_session_id = "debug-session-12345"
-        print(f"DEBUG: Successfully received data. Returning fake session_id: {fake_session_id}")
-        
-        return jsonify({
-            "session_id": fake_session_id, 
-            "message": "DEBUG: This is a successful test response from the dummy endpoint."
-        })
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_paths = []
+            for i, doc_b64 in enumerate(documents_b64):
+                file_content = base64.b64decode(doc_b64)
+                temp_file_path = os.path.join(temp_dir, f"doc_{i}")
+                with open(temp_file_path, "wb") as f:
+                    f.write(file_content)
+                file_paths.append(temp_file_path)
+
+            vector_store = create_vector_store(file_paths)
+            if not vector_store:
+                print("Error: create_vector_store returned None.")
+                return jsonify({"error": "Failed to process the uploaded documents."}), 500
+
+            knowledge_bases[session_id] = {
+                "vector_store": vector_store,
+                "all_doc_chunks": list(vector_store.docstore._dict.values())
+            }
+
+            print(f"Successfully created knowledge base for session: {session_id}")
+            return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
 
     except Exception as e:
-        # If there's an error just reading the request, send it back.
-        print(f"DEBUG: Error in the dummy endpoint itself: {str(e)}")
-        return jsonify({"error": f"An error occurred in the dummy endpoint: {str(e)}"}), 500
+        # THIS IS THE KEY CHANGE: PRINT THE FULL EXCEPTION
+        print(f"An internal error occurred during upload: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
+
+
+
+
 
 
 @app.route('/query', methods=['POST'])
