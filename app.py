@@ -7,9 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1GXVJ0T2Ha7oJkTpIsMc5P3KFaBE_U__C
 """
 
-# This is the complete installation command for all features.
-!pip install -q --upgrade langchain langchain-community langchain-google-genai google-generativeai faiss-cpu "unstructured[local-inference]" python-magic python-docx langchain-unstructured flask pyngrok flask-cors
-!apt-get -qq install libmagic1
 
 import os
 import json
