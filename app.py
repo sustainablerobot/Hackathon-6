@@ -15,9 +15,11 @@ import tempfile
 import base64
 import uuid # To create unique session IDs
 from flask import Flask, request, jsonify
-from flask_cors import cross_origin
 
 from flask_cors import CORS, cross_origin
+
+
+
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -247,7 +249,7 @@ knowledge_bases = {}
 
 
 
-@app.route('/upload', methods=['POST', 'OPTIONS'])
+'''@app.route('/upload', methods=['POST', 'OPTIONS'])
 @cross_origin(origins="http://localhost:3000")
 def upload_documents():
     try:
@@ -290,7 +292,95 @@ def upload_documents():
         print(f"An internal error occurred during upload: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
+        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500;'''
+
+  # TODO: Replace this with your real vector store creation
+
+
+
+
+
+
+
+@app.route('/upload', methods=['POST', 'OPTIONS'])
+
+@cross_origin(origins=["http://localhost:3000"], allow_headers=["Content-Type"])
+
+def upload_documents():
+
+    if request.method == 'OPTIONS':
+
+        # Preflight request success
+
+        return '', 200
+
+
+
+    try:
+
+        data = request.get_json(force=True)
+
+        domain = data.get('domain')
+
+        documents_b64 = data.get('documents')
+
+
+
+        if not domain or not documents_b64 or not isinstance(documents_b64, list):
+
+            return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
+
+
+
+        session_id = str(uuid.uuid4())
+
+
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            file_paths = []
+
+            for I, doc_b64 in enumerate(documents_b64):
+
+                if not isinstance(doc_b64, str):
+
+                    return jsonify({"error": f"Invalid document format at index {I}. Expected base64 string."}), 400
+
+                
+
+                file_content = base64.b64decode(doc_b64)
+
+                temp_file_path = os.path.join(temp_dir, f"doc_{I}")
+
+                with open(temp_file_path, "wb") as f:
+
+                    f.write(file_content)
+
+                file_paths.append(temp_file_path)
+
+
+
+            # TODO: Replace this with your real vector store creation
+
+            vector_store = {"fake_store": True}
+
+            knowledge_bases[session_id] = {"vector_store": vector_store}
+
+
+
+        return jsonify({"session_id": session_id, "message": "Documents processed successfully."}), 200
+
+
+
+    except Exception as e:
+
+        return jsonify({"error": str(e)}), 500
+
+
+
+if _name_ == "_main_":
+
+    app.run(debug=True)
 
 
 
