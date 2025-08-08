@@ -15,7 +15,7 @@ import tempfile
 import base64
 import uuid # To create unique session IDs
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -225,8 +225,16 @@ else:
 # --- Document Upload and Processing ---
 # --- Domain Selection Menu ---
 app = Flask(__name__)
-# Explicitly allow localhost for testing
-CORS(app, resources={r"/*": {"origins": "https://docu-scan-ai-2pyf.vercel.app/"}})
+
+# --- FIX: Replace your CORS configuration with this ---
+CORS(app, resources={r"/*": {
+    "origins": [
+        "https://docu-scan-ai-2pyf.vercel.app", # Origin without trailing slash
+        "http://localhost:3000"                # Also good to have for local testing
+    ],
+    "methods": ["GET", "POST", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"] # Explicitly allow headers
+}})}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -241,7 +249,7 @@ def home():
 
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-@cross_origin(origins="https://docu-scan-ai-2pyf.vercel.app/")
+
 def upload_documents():
     try:
         if request.method == 'OPTIONS':
