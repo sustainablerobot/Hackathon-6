@@ -245,6 +245,19 @@ print("✅ AI Models and Chains Initialized Successfully.")
 
 # This dictionary will act as a temporary, in-memory storage for each user's knowledge base
 knowledge_bases = {}
+llm = None
+rag_chains = None
+
+def get_llm_and_rag_chains():
+    """Initializes the LLM and RAG chains on the first call."""
+    global llm, rag_chains
+    if llm is None:
+        llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
+        rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
+        print("✅ AI Models and Chains Initialized Successfully.")
+    return llm, rag_chains
+
+
 
 
 
@@ -299,6 +312,8 @@ def upload_documents():
 @app.route('/upload', methods=['POST', 'OPTIONS'])
 @cross_origin(origins="http://localhost:3000")
 def upload_documents():
+    # Call the initialization function here
+    get_llm_and_rag_chains()
     try:
         # Explicitly handle OPTIONS for preflight requests
         if request.method == 'OPTIONS':
@@ -347,6 +362,8 @@ def upload_documents():
 
 @app.route('/query', methods=['POST'])
 def handle_query():
+    # And here
+    get_llm_and_rag_chains()
     data = request.get_json()
     user_query = data.get('query')
     domain = data.get('domain')
