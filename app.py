@@ -15,11 +15,7 @@ import tempfile
 import base64
 import uuid # To create unique session IDs
 from flask import Flask, request, jsonify
-
 from flask_cors import CORS, cross_origin
-
-
-
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -28,17 +24,11 @@ from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 import glob
 
-
-'''try:
-    os.environ["GOOGLE_API_KEY"] = userdata.get('GOOGLE_API_KEY')
-    print("API Key loaded successfully.")
-except userdata.SecretNotFoundError:
-    print("ERROR: Secret 'GOOGLE_API_KEY' not found. Please add it to your Colab secrets.")'''
-
 if not os.environ.get("GOOGLE_API_KEY"):
     print("ERROR: GOOGLE_API_KEY environment variable not set.")
 
 MODEL_CONFIG = {"llm": "gemini-1.5-flash-latest", "embedding": "models/embedding-001"}
+
 
 
 PERSONALITIES = {
@@ -173,7 +163,7 @@ PERSONALITIES = {
 
 
 def create_vector_store(file_paths):
-    # This function remains the same.
+    # ... (Your existing create_vector_store function)
     all_documents = []
 
     try:
@@ -190,12 +180,11 @@ def create_vector_store(file_paths):
         print(f"Error creating vector store: {e}")
         return None
 
-def get_query_topic_with_llm(user_query, llm, topic_list): # Now takes topic_list as an argument
-    """Stage 1: The 'Router' LLM. Identifies the core  topic from the user's query."""
+def get_query_topic_with_llm(user_query, llm, topic_list):
+    # ... (Your existing get_query_topic_with_llm function)
     router_prompt_template = """
     You are an intelligent router AI. Your task is to analyze the user's query and identify the single most relevant insurance topic from the provided list.
     Return only the topic name from the list and nothing else. If no specific topic matches, return "General Inquiry".
-
     Topic List: {topics}
     User Query: "{query}"
     Most Relevant Topic:
@@ -209,7 +198,7 @@ def get_query_topic_with_llm(user_query, llm, topic_list): # Now takes topic_lis
         return topic
     except Exception as e:
         print(f"Error during query routing: {e}")
-        return "General Inquiry" # Fallback
+        return "General Inquiry"
 
 
 def get_final_decision_chain(llm, prompt_template): # Now takes prompt_template as an argument
@@ -236,86 +225,20 @@ else:
 # --- Document Upload and Processing ---
 # --- Domain Selection Menu ---
 app = Flask(__name__)
-
-#CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+# Explicitly allow localhost for testing
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
 print("✅ AI Models and Chains Initialized Successfully.")
 
-# This dictionary will act as a temporary, in-memory storage for each user's knowledge base
 knowledge_bases = {}
-llm = None
-rag_chains = None
-
-def get_llm_and_rag_chains():
-    """Initializes the LLM and RAG chains on the first call."""
-    global llm, rag_chains
-    if llm is None:
-        llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
-        rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
-        print("✅ AI Models and Chains Initialized Successfully.")
-    return llm, rag_chains
-
-
-
-
-
-
-'''@app.route('/upload', methods=['POST', 'OPTIONS'])
-@cross_origin(origins="http://localhost:3000")
-def upload_documents():
-    try:
-        data = request.get_json(force=True)
-        domain = data.get('domain')
-        documents_b64 = data.get('documents')
-
-        if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
-            return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
-
-        session_id = str(uuid.uuid4())
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_paths = []
-            for i, doc_b64 in enumerate(documents_b64):
-                # Ensure each item in the list is a string before decoding
-                if not isinstance(doc_b64, str):
-                    return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
-                
-                file_content = base64.b64decode(doc_b64)
-                temp_file_path = os.path.join(temp_dir, f"doc_{i}")
-                with open(temp_file_path, "wb") as f:
-                    f.write(file_content)
-                file_paths.append(temp_file_path)
-
-            vector_store = create_vector_store(file_paths)
-            if not vector_store:
-                print("Error: create_vector_store returned None.")
-                return jsonify({"error": "Failed to process the uploaded documents."}), 500
-
-            knowledge_bases[session_id] = {
-                "vector_store": vector_store,
-                "all_doc_chunks": list(vector_store.docstore._dict.values())
-            }
-
-            print(f"Successfully created knowledge base for session: {session_id}")
-            return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
-
-    except Exception as e:
-        print(f"An internal error occurred during upload: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500;'''
-
 
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-#@cross_origin(origins="http://localhost:3000")
+@cross_origin(origins="http://localhost:3000")
 def upload_documents():
-    # Call the initialization function here
-    get_llm_and_rag_chains()
     try:
-        # Explicitly handle OPTIONS for preflight requests
         if request.method == 'OPTIONS':
             return '', 200
 
@@ -362,8 +285,7 @@ def upload_documents():
 
 @app.route('/query', methods=['POST'])
 def handle_query():
-    # And here
-    get_llm_and_rag_chains()
+    # ... (Your existing handle_query function)
     data = request.get_json()
     user_query = data.get('query')
     domain = data.get('domain')
