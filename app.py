@@ -224,17 +224,17 @@ else:
 
 # --- Document Upload and Processing ---
 # --- Domain Selection Menu ---
+from flask_cors import CORS
+
 app = Flask(__name__)
 
-# --- FIX: Replace your CORS configuration with this ---
-CORS(app, resources={r"/*": {
-    "origins": [
-        "https://docu-scan-ai-2pyf.vercel.app", # Origin without trailing slash
-        "http://localhost:3000"                # Also good to have for local testing
-    ],
-    "methods": ["GET", "POST", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization"] # Explicitly allow headers
-}})}})
+CORS(app,
+     origins=["https://docu-scan-ai-2pyf.vercel.app", "http://localhost:3000"],
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=True
+)
+
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -243,31 +243,39 @@ print("✅ AI Models and Chains Initialized Successfully.")
 knowledge_bases = {}
 
 
+
 @app.route('/')
 def home():
     return "Server is live and running!", 200
 
-
+# Make sure the @cross_origin decorator is REMOVED from this route
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-
 def upload_documents():
+    # This block handles the browser's security check
+    if request.method == 'OPTIONS':
+        return '', 204  # <-- This is the ONLY line that should be indented here
+
+    # --- ✅ CORRECTED INDENTATION STARTS HERE ---
+    # The main logic is now outside the 'if' block
     try:
-        if request.method == 'OPTIONS':
-            return '', 200
         data = request.get_json(force=True)
         domain = data.get('domain')
         documents_b64 = data.get('documents')
 
         if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
             return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
+        
         session_id = str(uuid.uuid4())
+        
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
                 if not isinstance(doc_b64, str):
                     return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
+                
                 file_content = base64.b64decode(doc_b64)
                 temp_file_path = os.path.join(temp_dir, f"doc_{i}")
+                
                 with open(temp_file_path, "wb") as f:
                     f.write(file_content)
                 file_paths.append(temp_file_path)
@@ -276,20 +284,28 @@ def upload_documents():
             if not vector_store:
                 print("Error: create_vector_store returned None.")
                 return jsonify({"error": "Failed to process the uploaded documents."}), 500
+            
             knowledge_bases[session_id] = {
                 "vector_store": vector_store,
                 "all_doc_chunks": list(vector_store.docstore._dict.values())
             }
             print(f"Successfully created knowledge base for session: {session_id}")
             return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
+
     except Exception as e:
         print(f"An internal error occurred during upload: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
 
-@app.route('/query', methods=['POST'])
+
+@app.route('/query', methods=['POST', 'OPTIONS'])
 def handle_query():
+    # Also handle OPTIONS for the query route
+    if request.method == 'OPTIONS':
+        return '', 204
+        
+    # ... (the rest of your function remains the same)
     data = request.get_json()
     user_query = data.get('query')
     domain = data.get('domain')
