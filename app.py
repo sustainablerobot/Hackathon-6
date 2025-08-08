@@ -15,6 +15,8 @@ import tempfile
 import base64
 import uuid # To create unique session IDs
 from flask import Flask, request, jsonify
+from flask_cors import cross_origin
+
 from flask_cors import CORS, cross_origin
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
@@ -243,46 +245,9 @@ print("✅ AI Models and Chains Initialized Successfully.")
 knowledge_bases = {}
 
 
-'''@app.route('/upload', methods=['POST'])
-def upload_documents():
-    data = request.get_json()
-    domain = data.get('domain')
-    documents_b64 = data.get('documents') # Expects a list of base64 encoded strings
 
-    if not all([domain, documents_b64]):
-        return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
 
-    session_id = str(uuid.uuid4()) # Create a unique ID for this user session
-
-    try:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            file_paths = []
-            for i, doc_b64 in enumerate(documents_b64):
-                file_content = base64.b64decode(doc_b64)
-                temp_file_path = os.path.join(temp_dir, f"doc_{i}")
-                with open(temp_file_path, "wb") as f:
-                    f.write(file_content)
-                file_paths.append(temp_file_path)
-
-            # Create the vector store on-the-fly from the user's documents
-            vector_store = create_vector_store(file_paths)
-            if not vector_store:
-                return jsonify({"error": "Failed to process the uploaded documents."}), 500
-
-            # Store the created knowledge base in our global dictionary using the session_id
-            knowledge_bases[session_id] = {
-                "vector_store": vector_store,
-                "all_doc_chunks": list(vector_store.docstore._dict.values())
-            }
-
-            print(f"Successfully created knowledge base for session: {session_id}")
-            # Return the session_id to the frontend so it can be used for asking questions
-            return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
-
-    except Exception as e:
-        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500'''
-
-@app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['POST', 'OPTIONS'])
 @cross_origin(origins="http://localhost:3000")
 def upload_documents():
     try:
