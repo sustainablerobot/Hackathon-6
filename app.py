@@ -226,7 +226,7 @@ else:
 # --- Domain Selection Menu ---
 app = Flask(__name__)
 # Explicitly allow localhost for testing
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": "https://docu-scan-ai-2pyf.vercel.app/"}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -238,10 +238,10 @@ knowledge_bases = {}
 @app.route('/')
 def home():
     return "Server is live and running!", 200
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-@cross_origin(origins="http://localhost:3000")
+@cross_origin(origins="https://docu-scan-ai-2pyf.vercel.app/")
 def upload_documents():
     try:
         if request.method == 'OPTIONS':
@@ -307,5 +307,3 @@ def handle_query():
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
 
- if __name__ == "__main__":
-    app.run(debug=True)
