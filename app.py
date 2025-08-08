@@ -294,12 +294,6 @@ def upload_documents():
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500;'''
 
-  # TODO: Replace this with your real vector store creation
-
-
-
-
-
 
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
