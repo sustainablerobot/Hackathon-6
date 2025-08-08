@@ -379,6 +379,3 @@ def handle_query():
 
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
