@@ -237,7 +237,7 @@ else:
 # --- Domain Selection Menu ---
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+#CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -310,7 +310,7 @@ def upload_documents():
 
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-@cross_origin(origins="http://localhost:3000")
+#@cross_origin(origins="http://localhost:3000")
 def upload_documents():
     # Call the initialization function here
     get_llm_and_rag_chains()
