@@ -235,28 +235,29 @@ print("✅ AI Models and Chains Initialized Successfully.")
 knowledge_bases = {}
 
 
+@app.route('/')
+def home():
+    return "Server is live and running!", 200
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 @app.route('/upload', methods=['POST', 'OPTIONS'])
 @cross_origin(origins="http://localhost:3000")
 def upload_documents():
     try:
         if request.method == 'OPTIONS':
             return '', 200
-
         data = request.get_json(force=True)
         domain = data.get('domain')
         documents_b64 = data.get('documents')
 
         if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
             return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
-
         session_id = str(uuid.uuid4())
-
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
                 if not isinstance(doc_b64, str):
                     return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
-                
                 file_content = base64.b64decode(doc_b64)
                 temp_file_path = os.path.join(temp_dir, f"doc_{i}")
                 with open(temp_file_path, "wb") as f:
@@ -267,54 +268,41 @@ def upload_documents():
             if not vector_store:
                 print("Error: create_vector_store returned None.")
                 return jsonify({"error": "Failed to process the uploaded documents."}), 500
-
             knowledge_bases[session_id] = {
                 "vector_store": vector_store,
                 "all_doc_chunks": list(vector_store.docstore._dict.values())
             }
-
             print(f"Successfully created knowledge base for session: {session_id}")
             return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
-
     except Exception as e:
         print(f"An internal error occurred during upload: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
 
-
 @app.route('/query', methods=['POST'])
 def handle_query():
-    # ... (Your existing handle_query function)
     data = request.get_json()
     user_query = data.get('query')
     domain = data.get('domain')
     session_id = data.get('session_id')
-
     if not all([user_query, domain, session_id]):
         return jsonify({"error": "Request must include 'query', 'domain', and 'session_id'"}), 400
-
     if session_id not in knowledge_bases:
         return jsonify({"error": "Invalid session_id. Please upload documents first."}), 400
-
     try:
         kb = knowledge_bases[session_id]
         personality = PERSONALITIES[domain]
         final_decision_chain = rag_chains[domain]
-
         topic = get_query_topic_with_llm(user_query, llm, personality["topic_list"])
-
         relevant_docs = kb["vector_store"].similarity_search(user_query, k=8)
-
         unique_docs = list({doc.page_content: doc for doc in relevant_docs}.values())
         context = "\n\n".join([f"Clause from document:\n{doc.page_content}" for doc in unique_docs])
-
         result = final_decision_chain.invoke({"context": context, "query": user_query})
         match = re.search(r'\{.*\}', result.get('text', ''), re.DOTALL)
         if match:
             return jsonify(json.loads(match.group(0)))
         else:
             return jsonify({"error": "Failed to parse JSON from AI."}), 500
-
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
