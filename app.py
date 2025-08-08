@@ -306,3 +306,6 @@ def handle_query():
             return jsonify({"error": "Failed to parse JSON from AI."}), 500
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
+
+ if __name__ == "__main__":
+    app.run(debug=True)
