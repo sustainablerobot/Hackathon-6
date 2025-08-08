@@ -15,7 +15,7 @@ import tempfile
 import base64
 import uuid # To create unique session IDs
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -232,7 +232,8 @@ else:
 # --- Document Upload and Processing ---
 # --- Domain Selection Menu ---
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -281,8 +282,9 @@ def upload_documents():
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500'''
 
-app.route('/upload', methods=['POST'])
-def upload_documents():
+@app.route('/upload', methods=['POST'])
+@cross_origin(origins="http://localhost:3000")
+def upload_documents()
     data = request.get_json()
     domain = data.get('domain')
     documents_b64 = data.get('documents')  # This must be a list of strings
