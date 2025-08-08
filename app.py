@@ -297,86 +297,52 @@ def upload_documents():
 
 
 @app.route('/upload', methods=['POST', 'OPTIONS'])
-
-@cross_origin(origins=["http://localhost:3000"], allow_headers=["Content-Type"])
-
+@cross_origin(origins="http://localhost:3000")
 def upload_documents():
-
-    if request.method == 'OPTIONS':
-
-        # Preflight request success
-
-        return '', 200
-
-
-
     try:
+        # Explicitly handle OPTIONS for preflight requests
+        if request.method == 'OPTIONS':
+            return '', 200
 
         data = request.get_json(force=True)
-
         domain = data.get('domain')
-
         documents_b64 = data.get('documents')
 
-
-
-        if not domain or not documents_b64 or not isinstance(documents_b64, list):
-
+        if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
             return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
-
-
 
         session_id = str(uuid.uuid4())
 
-
-
         with tempfile.TemporaryDirectory() as temp_dir:
-
             file_paths = []
-
-            for I, doc_b64 in enumerate(documents_b64):
-
+            for i, doc_b64 in enumerate(documents_b64):
                 if not isinstance(doc_b64, str):
-
-                    return jsonify({"error": f"Invalid document format at index {I}. Expected base64 string."}), 400
-
+                    return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
                 
-
                 file_content = base64.b64decode(doc_b64)
-
-                temp_file_path = os.path.join(temp_dir, f"doc_{I}")
-
+                temp_file_path = os.path.join(temp_dir, f"doc_{i}")
                 with open(temp_file_path, "wb") as f:
-
                     f.write(file_content)
-
                 file_paths.append(temp_file_path)
 
+            vector_store = create_vector_store(file_paths)
+            if not vector_store:
+                print("Error: create_vector_store returned None.")
+                return jsonify({"error": "Failed to process the uploaded documents."}), 500
 
+            knowledge_bases[session_id] = {
+                "vector_store": vector_store,
+                "all_doc_chunks": list(vector_store.docstore._dict.values())
+            }
 
-            # TODO: Replace this with your real vector store creation
-
-            vector_store = {"fake_store": True}
-
-            knowledge_bases[session_id] = {"vector_store": vector_store}
-
-
-
-        return jsonify({"session_id": session_id, "message": "Documents processed successfully."}), 200
-
-
+            print(f"Successfully created knowledge base for session: {session_id}")
+            return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
 
     except Exception as e:
-
-        return jsonify({"error": str(e)}), 500
-
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
-
-
+        print(f"An internal error occurred during upload: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
 
 
 @app.route('/query', methods=['POST'])
@@ -393,12 +359,10 @@ def handle_query():
         return jsonify({"error": "Invalid session_id. Please upload documents first."}), 400
 
     try:
-        # Retrieve the correct knowledge base for this session
         kb = knowledge_bases[session_id]
         personality = PERSONALITIES[domain]
         final_decision_chain = rag_chains[domain]
 
-        # --- Execute the Two-Stage Pipeline ---
         topic = get_query_topic_with_llm(user_query, llm, personality["topic_list"])
 
         relevant_docs = kb["vector_store"].similarity_search(user_query, k=8)
@@ -415,3 +379,6 @@ def handle_query():
 
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
