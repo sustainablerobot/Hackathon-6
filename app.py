@@ -285,26 +285,29 @@ def upload_documents():
 @app.route('/upload', methods=['POST'])
 @cross_origin(origins="http://localhost:3000")
 def upload_documents():
-    data = request.get_json()
-    domain = data.get('domain')
-    documents_b64 = data.get('documents')  # This must be a list of strings
-
-    if not all([domain, documents_b64]):
-        return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
-
-    session_id = str(uuid.uuid4())
-
     try:
+        data = request.get_json(force=True)
+        domain = data.get('domain')
+        documents_b64 = data.get('documents')
+
+        if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
+            return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
+
+        session_id = str(uuid.uuid4())
+
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
-                # The doc_b64 variable must be a string here
-                file_content = base64.b64decode(doc_b64) 
+                # Ensure each item in the list is a string before decoding
+                if not isinstance(doc_b64, str):
+                    return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
+                
+                file_content = base64.b64decode(doc_b64)
                 temp_file_path = os.path.join(temp_dir, f"doc_{i}")
                 with open(temp_file_path, "wb") as f:
                     f.write(file_content)
                 file_paths.append(temp_file_path)
-                
+
             vector_store = create_vector_store(file_paths)
             if not vector_store:
                 print("Error: create_vector_store returned None.")
@@ -319,12 +322,10 @@ def upload_documents():
             return jsonify({"session_id": session_id, "message": "Documents processed successfully."})
 
     except Exception as e:
-        # THIS IS THE KEY CHANGE: PRINT THE FULL EXCEPTION
         print(f"An internal error occurred during upload: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
-
 
 
 
