@@ -281,11 +281,11 @@ def upload_documents():
     except Exception as e:
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500'''
 
-@app.route('/upload', methods=['POST'])
+app.route('/upload', methods=['POST'])
 def upload_documents():
     data = request.get_json()
     domain = data.get('domain')
-    documents_b64 = data.get('documents')
+    documents_b64 = data.get('documents')  # This must be a list of strings
 
     if not all([domain, documents_b64]):
         return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
@@ -296,12 +296,13 @@ def upload_documents():
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
-                file_content = base64.b64decode(doc_b64)
+                # The doc_b64 variable must be a string here
+                file_content = base64.b64decode(doc_b64) 
                 temp_file_path = os.path.join(temp_dir, f"doc_{i}")
                 with open(temp_file_path, "wb") as f:
                     f.write(file_content)
                 file_paths.append(temp_file_path)
-
+                
             vector_store = create_vector_store(file_paths)
             if not vector_store:
                 print("Error: create_vector_store returned None.")
