@@ -284,7 +284,7 @@ def upload_documents():
 
 @app.route('/upload', methods=['POST'])
 @cross_origin(origins="http://localhost:3000")
-def upload_documents()
+def upload_documents():
     data = request.get_json()
     domain = data.get('domain')
     documents_b64 = data.get('documents')  # This must be a list of strings
