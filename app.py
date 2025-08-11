@@ -46,7 +46,7 @@ PERSONALITIES = {
         "Dental Treatment Accident",
         "Robotic Surgery Sub-Limit",
         "Post-Hospitalization Time Limit",
-        "General Inquiry"
+        "General Inquiry",
         "Knee Surgery",
              "General Enquiry"
         ],
@@ -228,13 +228,12 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-CORS(app,
-     origins=["https://docu-scan-ai-2pyf.vercel.app", "http://localhost:3000"],
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"],
-     supports_credentials=True
-)
-
+CORS(app, resources={r"/*": {
+    "origins": ["https://docu-scan-ai-2pyf.vercel.app", "http://localhost:3000"],
+    "allow_headers": ["Content-Type", "Authorization"],
+    "methods": ["GET", "POST", "OPTIONS"],
+    "supports_credentials": True
+}})
 
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
@@ -249,11 +248,16 @@ def home():
     return "Server is live and running!", 200
 
 # Make sure the @cross_origin decorator is REMOVED from this route
+from flask import make_response
+
 @app.route('/upload', methods=['POST', 'OPTIONS'])
 def upload_documents():
-    # This block handles the browser's security check
     if request.method == 'OPTIONS':
-        return '', 204  # <-- This is the ONLY line that should be indented here
+        response = make_response('', 204)
+        response.headers.add("Access-Control-Allow-Origin", "https://docu-scan-ai-2pyf.vercel.app")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        return response # <-- This is the ONLY line that should be indented here
 
     # --- ✅ CORRECTED INDENTATION STARTS HERE ---
     # The main logic is now outside the 'if' block
@@ -301,9 +305,12 @@ def upload_documents():
 
 @app.route('/query', methods=['POST', 'OPTIONS'])
 def handle_query():
-    # Also handle OPTIONS for the query route
-    if request.method == 'OPTIONS':
-        return '', 204
+    if request.method == 'OPTIONS':  # <-- yeh line bilkul start se align
+        response = make_response('', 204)
+        response.headers.add("Access-Control-Allow-Origin", "https://docu-scan-ai-2pyf.vercel.app")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        return response
         
     # ... (the rest of your function remains the same)
     data = request.get_json()
