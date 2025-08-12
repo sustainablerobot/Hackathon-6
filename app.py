@@ -230,7 +230,7 @@ app = Flask(__name__)
 
 CORS(app, resources={r"/*": {
     "origins": [
-        "https://docu-scan-ai-wib3.vercel.app",  # <-- CORRECTED URL
+        "https://docu-scan-ai-ip1a.vercel.app",  # <-- CORRECTED URL
         "http://localhost:3000",
         "https://code-blooded.vercel.app",
         "https://code-blooded-6ylb.onrender.com"
