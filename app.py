@@ -261,7 +261,10 @@ from flask import make_response
 @app.route('/upload', methods=['POST'])
 def upload_documents():
     try:
+        print("Received upload request.") # New print statement
         data = request.get_json()
+        print(f"Request data received: {data.keys()}") # New print statement
+        
         domain = data.get('domain')
         documents_b64 = data.get('documents')
 
@@ -270,21 +273,23 @@ def upload_documents():
 
         session_id = str(uuid.uuid4())
         
-        # ... (the rest of your logic remains the same)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
                 if not isinstance(doc_b64, str):
                     return jsonify({"error": f"Invalid document format at index {i}. Expected a base64 string."}), 400
                 
+                print(f"Decoding document {i}...") # New print statement
                 file_content = base64.b64decode(doc_b64)
                 temp_file_path = os.path.join(temp_dir, f"doc_{i}")
                 
                 with open(temp_file_path, "wb") as f:
                     f.write(file_content)
                 file_paths.append(temp_file_path)
-
+            
+            print("Creating vector store...") # New print statement
             vector_store = create_vector_store(file_paths)
+            
             if not vector_store:
                 print("Error: create_vector_store returned None.")
                 return jsonify({"error": "Failed to process the uploaded documents."}), 500
@@ -301,7 +306,6 @@ def upload_documents():
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
-
 
 @app.route('/query', methods=['POST'])
 def handle_query():
