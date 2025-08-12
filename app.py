@@ -229,14 +229,8 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {
-    "origins": [
-        "https://docu-scan-ai-ip1a.vercel.app",  # <-- ADD THIS NEW URL
-        "https://docu-scan-ai.vercel.app",
-        "https://docu-scan-ai-wib3.vercel.app",
-        "https://code-blooded-6ylb.onrender.com",
-        "http://localhost:3000"
-    ],
-    "allow_headers": ["Content-Type", "Authorization"],
+    "origins": "*",  # temporarily allow all for testing
+    "allow_headers": ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
     "methods": ["GET", "POST", "OPTIONS"],
     "supports_credentials": True
 }})
