@@ -229,12 +229,16 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {
-    "origins": ["https://docu-scan-ai-2pyf.vercel.app"],
+    "origins": [
+         "https://docu-scan-ai-2pyf.vercel.app", 
+        "http://localhost:3000",
+        "https://code-blooded.vercel.app",
+        "https://code-blooded-6ylb.onrender.com"  # For local development
+    ],
     "allow_headers": ["Content-Type", "Authorization"],
     "methods": ["GET", "POST", "OPTIONS"],
     "supports_credentials": True
 }})
-
 llm = ChatGoogleGenerativeAI(model=MODEL_CONFIG["llm"], temperature=0.0)
 rag_chains = {domain: get_final_decision_chain(llm, p["prompt_template"]) for domain, p in PERSONALITIES.items()}
 print("✅ AI Models and Chains Initialized Successfully.")
