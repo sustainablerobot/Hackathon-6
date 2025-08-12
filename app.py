@@ -230,10 +230,11 @@ app = Flask(__name__)
 
 CORS(app, resources={r"/*": {
     "origins": [
-        "https://docu-scan-ai-ip1a.vercel.app",  # <-- CORRECTED URL
-        "http://localhost:3000",
-        "https://code-blooded.vercel.app",
-        "https://code-blooded-6ylb.onrender.com"
+        "https://docu-scan-ai-ip1a.vercel.app",  # <-- ADD THIS NEW URL
+        "https://docu-scan-ai.vercel.app",
+        "https://docu-scan-ai-wib3.vercel.app",
+        "https://code-blooded-6ylb.onrender.com",
+        "http://localhost:3000"
     ],
     "allow_headers": ["Content-Type", "Authorization"],
     "methods": ["GET", "POST", "OPTIONS"],
