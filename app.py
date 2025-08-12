@@ -229,7 +229,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {
-    "origins": ["https://docu-scan-ai-2pyf.vercel.app", "http://localhost:3000"],
+    "origins": ["https://docu-scan-ai-2pyf.vercel.app"],
     "allow_headers": ["Content-Type", "Authorization"],
     "methods": ["GET", "POST", "OPTIONS"],
     "supports_credentials": True
@@ -250,27 +250,19 @@ def home():
 # Make sure the @cross_origin decorator is REMOVED from this route
 from flask import make_response
 
-@app.route('/upload', methods=['POST', 'OPTIONS'])
+@app.route('/upload', methods=['POST'])
 def upload_documents():
-    if request.method == 'OPTIONS':
-        response = make_response('', 204)
-        response.headers.add("Access-Control-Allow-Origin", "https://docu-scan-ai-2pyf.vercel.app")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        return response # <-- This is the ONLY line that should be indented here
-
-    # --- ✅ CORRECTED INDENTATION STARTS HERE ---
-    # The main logic is now outside the 'if' block
     try:
-        data = request.get_json(force=True)
+        data = request.get_json()
         domain = data.get('domain')
         documents_b64 = data.get('documents')
 
         if not all([domain, documents_b64]) or not isinstance(documents_b64, list):
             return jsonify({"error": "Request must include 'domain' and a list of 'documents'"}), 400
-        
+
         session_id = str(uuid.uuid4())
         
+        # ... (the rest of your logic remains the same)
         with tempfile.TemporaryDirectory() as temp_dir:
             file_paths = []
             for i, doc_b64 in enumerate(documents_b64):
@@ -303,38 +295,39 @@ def upload_documents():
         return jsonify({"error": f"An internal error occurred during upload: {str(e)}"}), 500
 
 
-@app.route('/query', methods=['POST', 'OPTIONS'])
+@app.route('/query', methods=['POST'])
 def handle_query():
-    if request.method == 'OPTIONS':  # <-- yeh line bilkul start se align
-        response = make_response('', 204)
-        response.headers.add("Access-Control-Allow-Origin", "https://docu-scan-ai-2pyf.vercel.app")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        return response
-        
-    # ... (the rest of your function remains the same)
     data = request.get_json()
     user_query = data.get('query')
     domain = data.get('domain')
     session_id = data.get('session_id')
+
     if not all([user_query, domain, session_id]):
         return jsonify({"error": "Request must include 'query', 'domain', and 'session_id'"}), 400
+
     if session_id not in knowledge_bases:
         return jsonify({"error": "Invalid session_id. Please upload documents first."}), 400
+
     try:
         kb = knowledge_bases[session_id]
         personality = PERSONALITIES[domain]
         final_decision_chain = rag_chains[domain]
+        
+        # ... (the rest of your logic remains the same)
         topic = get_query_topic_with_llm(user_query, llm, personality["topic_list"])
         relevant_docs = kb["vector_store"].similarity_search(user_query, k=8)
         unique_docs = list({doc.page_content: doc for doc in relevant_docs}.values())
         context = "\n\n".join([f"Clause from document:\n{doc.page_content}" for doc in unique_docs])
         result = final_decision_chain.invoke({"context": context, "query": user_query})
         match = re.search(r'\{.*\}', result.get('text', ''), re.DOTALL)
+
         if match:
             return jsonify(json.loads(match.group(0)))
         else:
             return jsonify({"error": "Failed to parse JSON from AI."}), 500
-    except Exception as e:
-        return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
 
+    except Exception as e:
+        print(f"An internal error occurred during query: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
