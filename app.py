@@ -336,3 +336,8 @@ def handle_query():
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    # Use the PORT environment variable provided by Render, defaulting to 5000 if not set.
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
