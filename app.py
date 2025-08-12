@@ -246,7 +246,10 @@ print("✅ AI Models and Chains Initialized Successfully.")
 
 knowledge_bases = {}
 
-
+# In your Flask app.py file
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 @app.route('/')
 def home():
@@ -337,7 +340,7 @@ def handle_query():
         traceback.print_exc()
         return jsonify({"error": f"An internal error occurred during query: {str(e)}"}), 500
 
+# Make sure this is at the end of your file
 if __name__ == '__main__':
-    # Use the PORT environment variable provided by Render, defaulting to 5000 if not set.
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
