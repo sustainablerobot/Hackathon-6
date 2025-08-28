@@ -3,6 +3,7 @@ import json
 import re
 import uuid
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.vectorstores import FAISS
@@ -13,6 +14,7 @@ from langchain.prompts import PromptTemplate
 
 # --- 1. SET UP THE FLASK APP ---
 app = Flask(__name__)
+CORS(app)
 # Create a temporary folder for uploads
 UPLOAD_FOLDER = 'temp_uploads'
 if not os.path.exists(UPLOAD_FOLDER):
