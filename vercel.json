@@ -3,7 +3,11 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 300,
+        "memory": 2048
+      }
     }
   ],
   "routes": [
@@ -11,11 +15,5 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
-  ],
-  "functions": {
-    "app.py": {
-      "memory": 2048,
-      "maxDuration": 300
-    }
-  }
+  ]
 }
