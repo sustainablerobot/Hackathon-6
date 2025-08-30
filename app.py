@@ -14,7 +14,7 @@ from langchain.prompts import PromptTemplate
 
 # --- 1. SET UP THE FLASK APP ---
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://docu-scan-ai-ip1a.vercel.app", "http://localhost:3000"])
 # Create a temporary folder for uploads
 UPLOAD_FOLDER = 'temp_uploads'
 if not os.path.exists(UPLOAD_FOLDER):
